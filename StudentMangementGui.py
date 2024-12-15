@@ -10,8 +10,8 @@ db = client["school_management"]
 collection = db["students"]
 
 # CustomTkinter configuration
-ctk.set_appearance_mode("dark")
-ctk.set_default_color_theme("blue")
+ctk.set_appearance_mode("light")
+ctk.set_default_color_theme("green")
 
 class CRUDApp(ctk.CTk):
     def __init__(self):
@@ -47,7 +47,7 @@ class CRUDApp(ctk.CTk):
         title_label = ctk.CTkLabel(header_frame, 
                                    text="Student Management System", 
                                    font=("Arial", 24, "bold"),
-                                   text_color=("blue", "white"))
+                                   text_color=("black", "white"))
         title_label.pack(pady=15, padx=20, anchor="w")
 
     def create_treeview_section(self):
@@ -62,17 +62,22 @@ class CRUDApp(ctk.CTk):
 
         # Treeview
         self.tree = ttk.Treeview(left_frame, 
-                                 columns=("Name", "Age"), 
+                                 columns=("Name", "Age", "Email", "Phone", "Address"), 
                                  show='headings', 
                                  style="Custom.Treeview")
         self.tree.heading("Name", text="Name", command=lambda: self.sort_column("Name", False))
         self.tree.heading("Age", text="Age", command=lambda: self.sort_column("Age", False))
+        self.tree.heading("Email", text="Email", command=lambda: self.sort_column("Email", False))
+        self.tree.heading("Phone", text="Phone", command=lambda: self.sort_column("Phone", False))
+        self.tree.heading("Address", text="Address", command=lambda: self.sort_column("Address", False))
         self.tree.pack(pady=10, padx=10, fill="both", expand=True)
 
         # Scrollbar for Treeview
         scrollbar = ctk.CTkScrollbar(left_frame, orientation="vertical", command=self.tree.yview)
         self.tree.configure(yscroll=scrollbar.set)
         scrollbar.pack(side="right", fill="y", padx=(0, 10), pady=10)
+
+        self.tree.bind('<<TreeviewSelect>>', self.on_select)
 
         self.load_entries()
 
@@ -114,6 +119,24 @@ class CRUDApp(ctk.CTk):
         self.age_entry = ctk.CTkEntry(frame, placeholder_text="Enter student age")
         self.age_entry.pack(pady=5, padx=20, fill="x")
 
+        # Email Entry
+        email_label = ctk.CTkLabel(frame, text="Student Email")
+        email_label.pack(pady=(10, 5))
+        self.email_entry = ctk.CTkEntry(frame, placeholder_text="Enter student email")
+        self.email_entry.pack(pady=5, padx=20, fill="x")
+
+        # Phone Entry
+        phone_label = ctk.CTkLabel(frame, text="Student Phone")
+        phone_label.pack(pady=(10, 5))
+        self.phone_entry = ctk.CTkEntry(frame, placeholder_text="Enter student phone number")
+        self.phone_entry.pack(pady=5, padx=20, fill="x")
+
+        # Address Entry
+        address_label = ctk.CTkLabel(frame, text="Student Address")
+        address_label.pack(pady=(10, 5))
+        self.address_entry = ctk.CTkEntry(frame, placeholder_text="Enter student address")
+        self.address_entry.pack(pady=5, padx=20, fill="x")
+
         # Add Button
         add_button = ctk.CTkButton(frame, text="Add Student", command=self.add_entry)
         add_button.pack(pady=20, padx=20, fill="x")
@@ -137,6 +160,24 @@ class CRUDApp(ctk.CTk):
         self.edit_age_entry = ctk.CTkEntry(frame, placeholder_text="Enter new age")
         self.edit_age_entry.pack(pady=5, padx=20, fill="x")
 
+        # Email Entry
+        email_label = ctk.CTkLabel(frame, text="New Student Email")
+        email_label.pack(pady=(10, 5))
+        self.edit_email_entry = ctk.CTkEntry(frame, placeholder_text="Enter new email")
+        self.edit_email_entry.pack(pady=5, padx=20, fill="x")
+
+        # Phone Entry
+        phone_label = ctk.CTkLabel(frame, text="New Student Phone")
+        phone_label.pack(pady=(10, 5))
+        self.edit_phone_entry = ctk.CTkEntry(frame, placeholder_text="Enter new phone number")
+        self.edit_phone_entry.pack(pady=5, padx=20, fill="x")
+
+        # Address Entry
+        address_label = ctk.CTkLabel(frame, text="New Student Address")
+        address_label.pack(pady=(10, 5))
+        self.edit_address_entry = ctk.CTkEntry(frame, placeholder_text="Enter new address")
+        self.edit_address_entry.pack(pady=5, padx=20, fill="x")
+
         # Edit Button
         edit_button = ctk.CTkButton(frame, text="Save Changes", command=self.edit_entry, state="disabled")
         edit_button.pack(pady=20, padx=20, fill="x")
@@ -157,17 +198,23 @@ class CRUDApp(ctk.CTk):
     def add_entry(self):
         name = self.name_entry.get()
         age = self.age_entry.get()
+        email = self.email_entry.get()
+        phone = self.phone_entry.get()
+        address = self.address_entry.get()
 
-        if not name or not age.isdigit():
-            messagebox.showerror("Input Error", "Please enter valid name and age.")
+        if not name or not age.isdigit() or not email or not phone or not address:
+            messagebox.showerror("Input Error", "Please enter valid data for all fields.")
             return
 
         try:
-            collection.insert_one({"name": name, "age": int(age)})
+            collection.insert_one({"name": name, "age": int(age), "email": email, "phone": phone, "address": address})
             messagebox.showinfo("Success", "Entry added successfully.")
             self.load_entries()
             self.name_entry.delete(0, tk.END)
             self.age_entry.delete(0, tk.END)
+            self.email_entry.delete(0, tk.END)
+            self.phone_entry.delete(0, tk.END)
+            self.address_entry.delete(0, tk.END)
         except Exception as e:
             messagebox.showerror("Database Error", f"An error occurred: {e}")
 
@@ -176,9 +223,31 @@ class CRUDApp(ctk.CTk):
             self.tree.delete(row)
         try:
             for entry in collection.find():
-                self.tree.insert("", "end", iid=str(entry["_id"]), values=(entry["name"], entry["age"]))
+                self.tree.insert("", "end", iid=str(entry["_id"]), values=(entry["name"], entry["age"], entry["email"], entry["phone"], entry["address"]))
         except Exception as e:
             messagebox.showerror("Database Error", f"An error occurred: {e}")
+
+    def on_select(self, event):
+        # When a row is selected, populate the edit form with that student's details
+        selected_item = self.tree.selection()
+        if selected_item:
+            selected_id = selected_item[0]
+            student = collection.find_one({"_id": ObjectId(selected_id)})
+            if student:
+                self.edit_name_entry.delete(0, tk.END)
+                self.edit_age_entry.delete(0, tk.END)
+                self.edit_email_entry.delete(0, tk.END)
+                self.edit_phone_entry.delete(0, tk.END)
+                self.edit_address_entry.delete(0, tk.END)
+                
+                self.edit_name_entry.insert(0, student["name"])
+                self.edit_age_entry.insert(0, student["age"])
+                self.edit_email_entry.insert(0, student["email"])
+                self.edit_phone_entry.insert(0, student["phone"])
+                self.edit_address_entry.insert(0, student["address"])
+
+                self.edit_button.configure(state="normal")
+                self.delete_button.configure(state="normal")
 
     def edit_entry(self):
         selected_item = self.tree.selection()
@@ -189,18 +258,26 @@ class CRUDApp(ctk.CTk):
         selected_id = selected_item[0]
         name = self.edit_name_entry.get()
         age = self.edit_age_entry.get()
+        email = self.edit_email_entry.get()
+        phone = self.edit_phone_entry.get()
+        address = self.edit_address_entry.get()
 
-        if not name or not age.isdigit():
-            messagebox.showerror("Input Error", "Please enter valid name and age.")
+        if not name or not age.isdigit() or not email or not phone or not address:
+            messagebox.showerror("Input Error", "Please enter valid data for all fields.")
             return
 
         try:
-            collection.update_one({"_id": ObjectId(selected_id)}, {"$set": {"name": name, "age": int(age)}})
+            collection.update_one(
+                {"_id": ObjectId(selected_id)}, 
+                {"$set": {"name": name, "age": int(age), "email": email, "phone": phone, "address": address}}
+            )
             messagebox.showinfo("Success", "Entry updated successfully.")
             self.load_entries()
             self.edit_name_entry.delete(0, tk.END)
             self.edit_age_entry.delete(0, tk.END)
-            self.edit_button.configure(state=tk.DISABLED)  # Disable edit button
+            self.edit_email_entry.delete(0, tk.END)
+            self.edit_phone_entry.delete(0, tk.END)
+            self.edit_address_entry.delete(0, tk.END)
         except Exception as e:
             messagebox.showerror("Database Error", f"An error occurred: {e}")
 
@@ -211,37 +288,13 @@ class CRUDApp(ctk.CTk):
             return
 
         selected_id = selected_item[0]
-        confirm = messagebox.askyesno("Confirm Deletion", "Are you sure you want to delete this entry?")
-        if confirm:
-            try:
-                collection.delete_one({"_id": ObjectId(selected_id)})
-                messagebox.showinfo("Success", "Entry deleted successfully.")
-                self.load_entries()
-            except Exception as e:
-                messagebox.showerror("Database Error", f"An error occurred: {e}")
-
-    def on_tree_select(self):
-        selected_item = self.tree.selection()
-        if selected_item:
-            selected_id = selected_item[0]
-            entry = collection.find_one({"_id": ObjectId(selected_id)})
-            if entry:
-                # Auto-fill the edit form with selected data
-                self.edit_name_entry.delete(0, tk.END)
-                self.edit_name_entry.insert(0, entry["name"])
-                self.edit_age_entry.delete(0, tk.END)
-                self.edit_age_entry.insert(0, entry["age"])
-                self.edit_button.configure(state=tk.NORMAL)  # Enable edit button
-                self.delete_button.configure(state=tk.NORMAL)  # Enable delete button
-            else:
-                messagebox.showerror("Database Error", "Entry not found.")
-        else:
-            self.edit_button.configure(state=tk.DISABLED)  # Disable edit button if no selection
-            self.delete_button.configure(state=tk.DISABLED)  # Disable delete button if no selection
-
+        try:
+            collection.delete_one({"_id": ObjectId(selected_id)})
+            messagebox.showinfo("Success", "Entry deleted successfully.")
+            self.load_entries()
+        except Exception as e:
+            messagebox.showerror("Database Error", f"An error occurred: {e}")
 
 if __name__ == "__main__":
     app = CRUDApp()
-    # Bind tree selection event
-    app.tree.bind("<<TreeviewSelect>>", app.on_tree_select)
     app.mainloop()
